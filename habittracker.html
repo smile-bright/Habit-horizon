@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker - Login</title>
+    <link href="https://fonts.cdnfonts.com/css/flutery-crystale" rel="stylesheet">
+    
+    <!-- Firebase SDK CDN links -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Login Page -->
+        <div id="loginPage" class="page active">
+            <div class="container">
+                <h1 class="app-title">🐼 Habit Tracker 🐼</h1>
+                <div class="login-card">
+                    <h2>Welcome!</h2>
+                    <p class="subtitle">Please enter your details to continue</p>
+                    
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="name">Your Name</label>
+                            <input type="text" id="name" placeholder="Enter your name or nickname" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" placeholder="Enter your email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" placeholder="Enter your password" required>
+                        </div>
+                        
+                        <button type="submit" id="loginButton">Start Tracking</button>
+                        <p id="authMessage" class="auth-message"></p>
+                        
+                        <div class="auth-toggle">
+                            <p>Don't have an account? <a href="#" id="toggleSignup">Sign up</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Habit Tracker Page -->
+        <div id="trackerPage" class="page">
+            <div class="container">
+                <!-- User welcome section -->
+                <div class="user-welcome">
+                    <p id="userGreeting">Hello, User!</p>
+                    <button id="logoutButton">Logout</button>
+                </div>
+                
+                <!--Title & subtitle-->
+                <h1 id="title">Month</h1>
+                <h2 id="subtitle">Monthly Habit Tracker</h2>
+                
+                <!--Calendar-->
+                <div id="calendarContainer">
+                    <div id="calendarDiv">
+                        <div id="calendarHeading">
+                            <p id="habitTitle">My New Habit</p>
+                            <p id="totalDays">0/31</p>
+                        </div>
+                        <div id="calendarContent">
+                            <div id="tracker"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Task Modal -->
+                <div id="taskModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3 id="modalTitle">Tasks for Day</h3>
+                        <div id="taskList">
+                            <!-- Tasks will be added here dynamically -->
+                        </div>
+                        <div class="add-task-form">
+                            <input type="text" id="newTaskInput" placeholder="Add a new task">
+                            <button id="addTaskBtn">Add</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="resetButton">Reset All Progress</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            background-color: rgb(195, 160, 160);
+            text-align: center;
+            font-family: Arial, sans-serif;
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px 10px;
+        }
+        
+        /* Page handling */
+        .page {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        /* Login Page Styles */
+        .app-title {
+            font-family: 'Flutery Crystale', sans-serif;
+            font-size: 3rem;
+            margin: 40px 0;
+            color: #333;
+        }
+        
+        .login-card {
+            background-color: beige;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 450px;
+            margin: 0 auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 2px solid #333;
+        }
+        
+        .login-card h2 {
+            font-family: 'Flutery Crystale', sans-serif;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+        
+        .subtitle {
+            opacity: 0.7;
+            margin-bottom: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        #loginButton {
+            width: 100%;
+            padding: 12px;
+            background-color: #eaacab;
+            border: 2px solid #d99a99;
+            border-radius: 25px;
+            font-family: 'Flutery Crystale', sans-serif;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        #loginButton:hover {
+            background-color: #d99a99;
+            transform: scale(1.02);
+        }
+        
+        .auth-message {
+            margin-top: 10px;
+            color: #ff6b6b;
+            font-size: 14px;
+            height: 20px;
+        }
+        
+        .auth-toggle {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        .auth-toggle a {
+            color: #d99a99;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .auth-toggle a:hover {
+            text-decoration: underline;
+        }
+        
+        /* User welcome section */
+        .user-welcome {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+        
+        #userGreeting {
+            font-family: 'Flutery Crystale', sans-serif;
+            font-size: 1.2rem;
+        }
+        
+        #logoutButton {
+            padding: 5px 15px;
+            background-color: transparent;
+            border: 1px solid #333;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        #logoutButton:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Habit Tracker Styles */
+        #title {
+            margin-top: 20px;
+            padding: 10px;
+            text-align: center;
+            font-size: 2.5rem;
+            font-family: 'Flutery Crystale', sans-serif;
+        }
+        
+        #subtitle {
+            opacity: 0.7;
+            font-size: 1.2rem;
+            text-align: center;
+            margin-bottom: 30px;
+            font-family: 'Flutery Crystale', sans-serif;
+        }
+        
+        #calendarContainer {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        
+        #calendarDiv {
+            background-color: beige;
+            border-radius: 10px 10px 20px 20px;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        #calendarHeading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 10px 10px 0px 0px;
+            border: 2px solid black;
+            padding: 15px 20px;
+            font-size: 1.2rem;
+            background-color: #eaacab;
+            font-family: 'Flutery Crystale', sans-serif;
+        }
+        
+        #habitTitle {
+            cursor: pointer;
+            padding: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        #habitTitle:hover {
+            transform: scale(1.05);
+            opacity: 0.8;
+        }
+        
+        #calendarContent {
+            padding: 15px;
+            border: 2px solid black;
+            border-top: none;
+        }
+        
+        #tracker {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .days-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .day {
+            width: 40px;
+            height: 40px;
+            margin: 3px;
+            padding: 10px;
+            font-size: 15px;
+            line-height: 20px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: beige;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .day:hover {
+            transform: scale(1.1);
+        }
+        
+        .day.active {
+            background-color: #eaacab;
+        }
+        
+        .day.today {
+            border: 3px solid black;
+        }
+        
+        .day.empty {
+            visibility: hidden;
+        }
+        
+        .day.has-tasks::after {
+            content: "✓";
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            width: 15px;
+            height: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal-content {
+            background-color: beige;
+            margin: 15% auto;
+            padding: 20px;
+            border: 2px solid black;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 500px;
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+        }
+        
+        #modalTitle {
+            margin-bottom: 20px;
+            text-align: center;
+            font-family: 'Flutery Crystale', sans-serif;
+        }
+        
+        #taskList {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .task-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: #f9f9f0;
+            border-radius: 5px;
+        }
+        
+        .task-item label {
+            margin-left: 10px;
+            flex-grow: 1;
+        }
+        
+        .task-item .delete-task {
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 3px 8px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .task-checkbox {
+            transform: scale(1.2);
+        }
+        
+        .task-checkbox:checked + label {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+        
+        .add-task-form {
+            display: flex;
+            margin-top: 15px;
+        }
+        
+        #newTaskInput {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px 0 0 5px;
+        }
+        
+        #addTaskBtn {
+            padding: 8px 15px;
+            background-color: #eaacab;
+            border: 1px solid #d99a99;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            font-family: 'Flutery Crystale', sans-serif;
+        }
+        
+        #addTaskBtn:hover {
+            background-color: #d99a99;
+        }
+        
+        #resetButton {
+            margin-top: 30px;
+            padding: 10px 20px;
+            background-color: #eaacab;
+            border: 2px solid black;
+            border-radius: 20px;
+            font-family: 'Flutery Crystale', sans-serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        #resetButton:hover {
+            background-color: #d99a99;
+            transform: scale(1.05);
+        }
+        
+        /* Media queries for responsiveness */
+        @media screen and (max-width: 600px) {
+            .app-title {
+                font-size: 2.5rem;
+                margin: 30px 0;
+            }
+            
+            .login-card {
+                padding: 20px;
+            }
+            
+            #title {
+                font-size: 2rem;
+                margin-top: 20px;
+            }
+            
+            #subtitle {
+                font-size: 1rem;
+                margin-bottom: 20px;
+            }
+            
+            .day {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+                padding: 8px;
+            }
+            
+            #calendarHeading {
+                padding: 10px 15px;
+                font-size: 1rem;
+            }
+            
+            .modal-content {
+                width: 90%;
+                margin: 30% auto;
+                padding: 15px;
+            }
+        }
+        
+        @media screen and (max-width: 400px) {
+            .day {
+                width: 30px;
+                height: 30px;
+                font-size: 12px;
+                padding: 6px;
+                margin: 2px;
+            }
+            
+            #calendarContent {
+                padding: 10px;
+            }
+            
+            .task-item {
+                padding: 5px;
+            }
+        }
+    </style>
+
+    <script>
+        // Firebase configuration
+        // REPLACE WITH YOUR OWN FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQjZuglqSb4_VV9eHHhhxDPbe7QQF5_SY",
+            authDomain: "habit-tracker-88829.firebaseapp.com",
+            databaseURL: "https://habit-tracker-88829-default-rtdb.firebaseio.com",
+            projectId: "habit-tracker-88829",
+            storageBucket: "habit-tracker-88829.firebasestorage.app",
+            messagingSenderId: "499245514500",
+            appId: "1:499245514500:web:930177847607d3cfecda51",
+            measurementId: "G-2JJHCDWYBH"
+        };
+        
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        // Current user object
+        let currentUser = null;
+        
+        // Page navigation functions
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show requested page
+            document.getElementById(pageId).classList.add('active');
+        }
+        
+        // Toggle between login and signup
+        let isSignup = false;
+        const toggleSignup = document.getElementById('toggleSignup');
+        const loginForm = document.getElementById('loginForm');
+        const loginButton = document.getElementById('loginButton');
+        const authMessage = document.getElementById('authMessage');
+        
+        toggleSignup.addEventListener('click', function(e) {
+            e.preventDefault();
+            isSignup = !isSignup;
+            
+            if (isSignup) {
+                loginButton.textContent = 'Sign Up';
+                toggleSignup.textContent = 'Log in';
+                toggleSignup.previousElementSibling.textContent = 'Already have an account? ';
+            } else {
+                loginButton.textContent = 'Start Tracking';
+                toggleSignup.textContent = 'Sign up';
+                toggleSignup.previousElementSibling.textContent = 'Don\'t have an account? ';
+            }
+        });
+        
+        // User authentication handling
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            authMessage.textContent = '';
+            
+            if (isSignup) {
+                // Create new user
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        // Save user name to Firestore
+                        const user = userCredential.user;
+                        return db.collection('users').doc(user.uid).set({
+                            name: name,
+                            email: email,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    })
+                    .then(() => {
+                        console.log('User created successfully');
+                    })
+                    .catch((error) => {
+                        authMessage.textContent = error.message;
+                    });
+            } else {
+                // Login existing user
+                auth.signInWithEmailAndPassword(email, password)
+                    .catch((error) => {
+                        authMessage.textContent = error.message;
+                    });
+            }
+        });
+        
+        // Logout handler
+        document.getElementById('logoutButton').addEventListener('click', function() {
+            if (confirm('Are you sure you want to logout?')) {
+                auth.signOut().then(() => {
+                    showPage('loginPage');
+                }).catch((error) => {
+                    console.error('Logout error:', error);
+                });
+            }
+        });
+        
+        // Authentication state observer
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in
+                currentUser = user;
+                
+                // Get user data from Firestore
+                db.collection('users').doc(user.uid).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            const userData = doc.data();
+                            // Update user greeting
+                            document.getElementById('userGreeting').textContent = `Hello, ${userData.name}!`;
+                        } else {
+                            console.log('No user data found!');
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error getting user data:', error);
+                    });
+                
+                // Navigate to tracker page
+                showPage('trackerPage');
+                
+                // Load user data and generate calendar
+                loadUserHabitTitle();
+                generateCalendar();
+            } else {
+                // User is signed out
+                currentUser = null;
+                showPage('loginPage');
+            }
+        });
+        
+        // Get date
+        const date = new Date();
+        
+        // Extract current date information
+        const currentMonth = date.getMonth();
+        const currentDay = date.getDay();
+        const currentDate = date.getDate();
+        const currentYear = date.getFullYear();
+        
+        const months = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December"
+        ];
+        
+        // Set the title with current month
+        const title = document.getElementById("title");
+        title.innerHTML = "🐼 " + months[currentMonth] + " 🐼";
+        
+        // Make habit title clickable
+        const habitTitle = document.getElementById("habitTitle");
+        habitTitle.onclick = function() {
+            let habits = prompt("What's your plan today?", habitTitle.innerHTML);
+            if (habits === null) return; // User clicked cancel
+            
+            if (habits.length === 0) {
+                habitTitle.innerHTML = "Click to set your habit";
+            } else {
+                habitTitle.innerHTML = habits;
+                // Save habit title to Firestore
+                if (currentUser) {
+                    db.collection('users').doc(currentUser.uid)
+                      .collection('habits')
+                      .doc(`${currentMonth}-${currentYear}`)
+                      .set({
+                          title: habits
+                      }, { merge: true })
+                      .catch(error => {
+                          console.error("Error saving habit title:", error);
+                      });
+                }
+            }
+        };
+        
+        // Load saved habit title for the current user
+        function loadUserHabitTitle() {
+            if (currentUser) {
+                db.collection('users').doc(currentUser.uid)
+                  .collection('habits')
+                  .doc(`${currentMonth}-${currentYear}`)
+                  .get()
+                  .then((doc) => {
+                      if (doc.exists && doc.data().title) {
+                          habitTitle.innerHTML = doc.data().title;
+                      }
+                  })
+                  .catch((error) => {
+                      console.error("Error loading habit title:", error);
+                  });
+            }
+        }
+        
+        const daysInTheMonthList = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        
+        // Adjust for leap year
+        if (currentYear % 4 === 0 && (currentYear % 100 !== 0 || currentYear % 400 === 0)) {
+            daysInTheMonthList[1] = 29;
+        }
+        
+        const daysInThisMonth = daysInTheMonthList[currentMonth];
+        
+        // Initialize completed days counter
+        let daysCompleted = 0;
+        const totalDays = document.getElementById("totalDays");
+        totalDays.innerHTML = "0/" + daysInThisMonth;
+        
+        // Get modal elements
+        const modal = document.getElementById("taskModal");
+        const closeBtn = document.getElementsByClassName("close")[0];
+        const modalTitle = document.getElementById("modalTitle");
+        const taskList = document.getElementById("taskList");
+        const newTaskInput = document.getElementById("newTaskInput");
+        const addTaskBtn = document.getElementById("addTaskBtn");
+        
+        // Current selected day for tasks
+        let selectedDay = null;
+        
+        // Close modal when clicking the X
+        closeBtn.onclick = function() {
+            modal.style.display = "none";
+        };
+        
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        };
+        
+        // Add task to selected day
+        addTaskBtn.onclick = function() {
+            const taskText = newTaskInput.value.trim();
+            if (taskText && selectedDay && currentUser) {
+                addTask(selectedDay, taskText);
+                newTaskInput.value = "";
+                updateTaskList(selectedDay);
+                updateDayTaskIndicator(selectedDay);
+            }
+        };
+        
+        // Allow adding task with Enter key
+        newTaskInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                addTaskBtn.click();
+            }
+        });
+        
+        // Function to add a task to a specific day
+        function addTask(day, taskText) {
+            if (!currentUser) return;
+            
+            const taskData = {
+                text: taskText,
+                completed: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            db.collection('users').doc(currentUser.uid)
+              .collection('tasks')
+              .doc(`${currentMonth}-${currentYear}-${day}`)
+              .collection('dayTasks')
+              .add(taskData)
+              .catch(error => {
+                  console.error("Error adding task:", error);
+              });
+        }
+        
+        // Function to get tasks for a specific day
+        function getTasks(day) {
+            return new Promise((resolve, reject) => {
+                if (!currentUser) {
+                    resolve([]);
+                    return;
+                }
+                
+                db.collection('users').doc(currentUser.uid)
+                  .collection('tasks')
+                  .doc(`${currentMonth}-${currentYear}-${day}`)
+                  .collection('dayTasks')
+                  .orderBy('createdAt')
+                  .get()
+                  .then(snapshot => {
+                      const tasks = [];
+                      snapshot.forEach(doc => {
+                          tasks.push({
+                              id: doc.id,
+                              ...doc.data()
+                          });
+                      });
+                      resolve(tasks);
+                  })
+                  .catch(error => {
+                      console.error("Error getting tasks:", error);
+                      reject(error);
+                  });
+            });
+        }
+        
+        // Function to update task list in modal
+        function updateTaskList(day) {
+            taskList.innerHTML = "<p>Loading tasks...</p>";
+            
+            getTasks(day).then(tasks => {
+                taskList.innerHTML = "";
+                
+                if (tasks.length === 0) {
+                    taskList.innerHTML = "<p>No tasks for this day. Add one below!</p>";
+                    return;
+                }
+                
+                tasks.forEach(task => {
+                    const taskItem = document.createElement("div");
+                    taskItem.classList.add("task-item");
+                    
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.classList.add("task-checkbox");
+                    checkbox.checked = task.completed;
+                    checkbox.dataset.id = task.id;
+                    
+                    const label = document.createElement("label");
+                    label.textContent = task.text;
+                    
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.classList.add("delete-task");
+                    deleteBtn.textContent = "×";
+                    deleteBtn.dataset.id = task.id;
+                    
+                    // Toggle task completion status
+                    checkbox.addEventListener("change", function() {
+                        toggleTaskCompletion(day, task.id, this.checked);
+                        updateDayTaskIndicator(day);
+                    });
+                    
+                    // Delete task
+                    deleteBtn.addEventListener("click", function() {
+                        deleteTask(day, task.id);
+                        updateTaskList(day);
+                        updateDayTaskIndicator(day);
+                    });
+                    
+                    taskItem.appendChild(checkbox);
+                    taskItem.appendChild(label);
+                    taskItem.appendChild(deleteBtn);
+                    taskList.appendChild(taskItem);
+                });
+            }).catch(error => {
+                taskList.innerHTML = "<p>Error loading tasks. Please try again.</p>";
+                console.error("Task list update error:", error);
+            });
+        }
+        
+        // Function to toggle task completion
+        function toggleTaskCompletion(day, taskId, completed) {
+            if (!currentUser) return;
+            
+            db.collection('users').doc(currentUser.uid)
+              .collection('tasks')
+              .doc(`${currentMonth}-${currentYear}-${day}`)
+              .collection('dayTasks')
+              .doc(taskId)
+              .update({
+                  completed: completed
+              })
+              .catch(error => {
+                  console.error("Error updating task:", error);
+              });
+        }
+        
+        // Function to delete a task
+        function deleteTask(day, taskId) {
+            if (!currentUser) return;
+            
+            db.collection('users').doc(currentUser.uid)
+              .collection('tasks')
+              .doc(`${currentMonth}-${currentYear}-${day}`)
+              .collection('dayTasks')
+              .doc(taskId)
+              .delete()
+              .catch(error => {
+                  console.error("Error deleting task:", error);
+              });
+        }
+        
+        // Function to update day task indicator
+        function updateDayTaskIndicator(day) {
+            const dayElement = document.getElementById(`day${day}`);
+            if (!dayElement) return;
+            
+            getTasks(day).then(tasks => {
+                if (tasks.length > 0) {
+                    dayElement.classList.add("has-tasks");
+                } else {
+                    dayElement.classList.remove("has-tasks");
+                }
+            });
+        }
+        
+        // Generate calendar days dynamically
+        function generateCalendar() {
+            const tracker = document.getElementById("tracker");
+            tracker.innerHTML = ''; // Clear existing content
+            
+            // Reset completion counter
+            daysCompleted = 0;
+            
+            // Get first day of month (0 = Sunday, 1 = Monday, etc.)
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+            
+            let dayCount = 1;
+            const totalDaysToShow = Math.ceil((daysInThisMonth + firstDayOfMonth) / 7) * 7;
+            
+            for (let i = 0; i < totalDaysToShow / 7; i++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'days-row';
+                
+                for (let j = 0; j < 7; j++) {
+                    const dayDiv = document.createElement('div');
+                    dayDiv.className = 'day';
+                    
+                    // Add empty space for days before the 1st day of month
+                    if (i === 0 && j < firstDayOfMonth) {
+                        dayDiv.classList.add('empty');
+                    } 
+                    // Add numbered days of the month
+                    else if (dayCount <= daysInThisMonth) {
+                        dayDiv.textContent = dayCount;
+                        dayDiv.id = "day" + dayCount;
+                        
+                        // Highlight today
+                        if (dayCount === currentDate) {
+                            dayDiv.classList.add('today');
+                        }
+                        
+                        const currentDayCount = dayCount;
+                        
+                        // Check if day has tasks
+                        if (currentUser) {
+                            getTasks(currentDayCount).then(tasks => {
+                                if (tasks.length > 0) {
+                                    dayDiv.classList.add("has-tasks");
+                                }
+                            });
+                            
+                            // Check if day is completed from Firestore
+                            db.collection('users').doc(currentUser.uid)
+                              .collection('completedDays')
+                              .doc(`${currentMonth + 1}-${currentYear}`)
+                              .get()
+                              .then((doc) => {
+                                  if (doc.exists && doc.data().days && doc.data().days.includes(currentDayCount)) {
+                                      dayDiv.classList.add('active');
+                                      daysCompleted++;
+                                      totalDays.innerHTML = daysCompleted + "/" + daysInThisMonth;
+                                  }
+                              })
+                              .catch(error => {
+                                  console.error("Error checking completed days:", error);
+                              });
+                        }
+                        
+                        // Add click event for all days
+                        dayDiv.addEventListener('click', function(e) {
+                            const dayNum = parseInt(e.target.textContent);
+                            
+                            // Show task modal
+                            selectedDay = dayNum;
+                            modalTitle.textContent = `Tasks for ${months[currentMonth]} ${dayNum}`;
+                            updateTaskList(dayNum);
+                            modal.style.display = "block";
+                            
+                            // If it's current day or past, also toggle completion
+                            if (dayNum <= currentDate && currentUser) {
+                                if (e.target.classList.contains('active')) {
+                                    // Unmark day
+                                    e.target.classList.remove('active');
+                                    daysCompleted--;
+                                    
+                                    // Update Firestore
+                                    removeCompletedDay(dayNum);
+                                } else {
+                                    // Mark day as completed
+                                    e.target.classList.add('active');
+                                    daysCompleted++;
+                                    
+                                    // Update Firestore
+                                    addCompletedDay(dayNum);
+                                }
+                                
+                                // Update total days display
+                                totalDays.innerHTML = daysCompleted + "/" + daysInThisMonth;
+                            }
+                        });
+                        
+                        dayCount++;
+                    } 
+                    // Empty days after month end
+                    else {
+                        dayDiv.classList.add('empty');
+                    }
+                    
+                    rowDiv.appendChild(dayDiv);
+                }
+                
+                tracker.appendChild(rowDiv);
+            }
+        }
+        
+        // Add day to completed days in Firestore
+        function addCompletedDay(day) {
+            if (!currentUser) return;
+            
+            const docRef = db.collection('users').doc(currentUser.uid)
+                .collection('completedDays')
+                .doc(`${currentMonth + 1}-${currentYear}`);
+            
+            // Use array-union to add the day without duplicates
+            docRef.set({
+                days: firebase.firestore.FieldValue.arrayUnion(day)
+            }, { merge: true })
+            .catch(error => {
+                console.error("Error adding completed day:", error);
+            });
+        }
+        
+        // Remove day from completed days in Firestore
+        function removeCompletedDay(day) {
+            if (!currentUser) return;
+            
+            const docRef = db.collection('users').doc(currentUser.uid)
+                .collection('completedDays')
+                .doc(`${currentMonth + 1}-${currentYear}`);
+            
+            // Use array-remove to remove the day
+            docRef.update({
+                days: firebase.firestore.FieldValue.arrayRemove(day)
+            })
+            .catch(error => {
+                console.error("Error removing completed day:", error);
+            });
+        }
+        
+        // Reset button functionality
+        const resetButton = document.getElementById('resetButton');
+        resetButton.addEventListener('click', function() {
+            if (!currentUser) return;
+            
+            if (confirm('Are you sure you want to reset ALL progress for this month? This will clear your habit tracking and all tasks.')) {
+                // Clear completed days for current month
+                db.collection('users').doc(currentUser.uid)
+                  .collection('completedDays')
+                  .doc(`${currentMonth + 1}-${currentYear}`)
+                  .delete()
+                  .then(() => {
+                      console.log("Completed days reset successfully");
+                  })
+                  .catch(error => {
+                      console.error("Error resetting completed days:", error);
+                  });
+                
+                // Get all days with tasks
+                const batch = db.batch();
+                
+                // First, get all task document references for the month
+                db.collection('users').doc(currentUser.uid)
+                  .collection('tasks')
+                  .where(firebase.firestore.FieldPath.documentId(), '>=', `${currentMonth}-${currentYear}-1`)
+                  .where(firebase.firestore.FieldPath.documentId(), '<=', `${currentMonth}-${currentYear}-${daysInThisMonth}`)
+                  .get()
+                  .then(snapshot => {
+                      // For each day, we need to get the subtasks and delete them
+                      const deletePromises = [];
+                      
+                      snapshot.forEach(doc => {
+                          // For each day with tasks, delete all subtasks
+                          const dayTaskRef = db.collection('users').doc(currentUser.uid)
+                              .collection('tasks')
+                              .doc(doc.id)
+                              .collection('dayTasks');
+                          
+                          deletePromises.push(
+                              dayTaskRef.get().then(subtasks => {
+                                  const subBatch = db.batch();
+                                  subtasks.forEach(subtask => {
+                                      subBatch.delete(subtask.ref);
+                                  });
+                                  return subBatch.commit();
+                              })
+                          );
+                          
+                          // Then delete the day document
+                          batch.delete(doc.ref);
+                      });
+                      
+                      // Wait for all subtask deletions to complete
+                      return Promise.all(deletePromises);
+                  })
+                  .then(() => {
+                      // Commit the batch to delete all the day documents
+                      return batch.commit();
+                  })
+                  .then(() => {
+                      console.log("All tasks reset successfully");
+                      
+                      // Reset completed days counter
+                      daysCompleted = 0;
+                      totalDays.innerHTML = "0/" + daysInThisMonth;
+                      
+                      // Regenerate calendar UI
+                      generateCalendar();
+                  })
+                  .catch(error => {
+                      console.error("Error resetting tasks:", error);
+                  });
+            }
+        });
+        
+        // Start the app when the page loads
+        window.onload = function() {
+            // Auth state observer handles initialization
+        };
+    </script>
+</body>
+</html>
